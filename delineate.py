@@ -36,13 +36,16 @@ import sigfig  # for formatting numbers to significant digits
 from py.fast_dissolve import dissolve_geopandas, fill_geopandas
 import pyproj
 from functools import partial
-from config import *
+from config import Config
 from py.mapper import make_map, create_folder_if_not_exists
 
-if PLOTS:
+# initialize the config
+conf = Config()
+
+if conf.PLOTS:
     import matplotlib.pyplot as plt
 
-if HIGH_RES:
+if conf.HIGH_RES:
     import py.merit_detailed
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
@@ -101,20 +104,20 @@ def validate(gages_df: pd.DataFrame) -> bool:
     return True
 
 
-def validate_search_distance():
+def validate_search_distance(conf: Config):
     """
     For the pour point relocation routine. SEARCH_DIST governs how far away we'll look for
     a unit catchment with an upstream area close to the a priori estimate.
     This function just checks whether this is valid.
     Does not return anything, just throws an error if it is out of range.
     """
-    if not isinstance(SEARCH_DIST, int) and not isinstance(SEARCH_DIST, float):
-       raise Exception(f"SEARCH_DIST must be a number. We got {SEARCH_DIST}")
+    if not isinstance(conf.SEARCH_DIST, int) and not isinstance(conf.SEARCH_DIST, float):
+       raise Exception(f"SEARCH_DIST must be a number. We got {conf.SEARCH_DIST}")
 
-    if SEARCH_DIST < 0.0:
+    if conf.SEARCH_DIST < 0.0:
         raise Exception("SEARCH distance in config.py must be a positive number.")
 
-    if SEARCH_DIST > 0.25:
+    if conf.SEARCH_DIST > 0.25:
         raise Exception("SEARCH_DIST is unrealistically high. It should be in decimal degrees, and must be less "
                         "than 0.25. In config.py, you entered {SEARCH_DIST}")
 
@@ -142,7 +145,7 @@ def get_area(poly: Polygon) -> float:
     return projected_poly.area / 1e6
 
 
-def delineate():
+def delineate(conf: Config):
     """
     THIS is the Main watershed delineation routine
     Make sure to set the variables in `config.py` before running.
@@ -198,7 +201,7 @@ def delineate():
         """
         # Find the river segment that is within a bounding box around the point
         dist = 0.01
-        max_dist = MAX_DIST  # How far away can we look before we give up?
+        max_dist = conf.MAX_DIST  # How far away can we look before we give up?
 
         # Keep track of how many river segments were found with each increase in distance.
         num_segments_found = [0]
@@ -221,10 +224,10 @@ def delineate():
                 min_pd = segments_found['pd'].min()
 
                 # Check whether they are "good enough"
-                if min_pd < AREA_MATCHING_THRESHOLD:
+                if min_pd < conf.AREA_MATCHING_THRESHOLD:
                     COMID = segments_found['pd'].idxmin()
                     uparea = round(segments_found['uparea'][COMID], 0)
-                    if VERBOSE:
+                    if conf.VERBOSE:
                         print("  (X) Found a river reach at a distance of {}, "
                               "area difference: {:,.0f}%".format(dist, min_pd * 100))
                     return COMID, uparea
@@ -259,7 +262,7 @@ def delineate():
         # Plot the gage point
         gages_joined.iloc[[i]].plot(ax=ax, c='red', edgecolors='black')
 
-        if suffix == "post" and HIGH_RES:
+        if suffix == "post" and conf.HIGH_RES:
             plt.scatter(x=lng_snap, y=lat_snap, c='cyan', edgecolors='black')
             plt.title(f"Showing the {len(subbasins_gdf)-1} upstream unit catchments and split terminal unit catchment")
         else:
@@ -269,30 +272,31 @@ def delineate():
         plt.close(fig)
 
     # Check that the OUTPUT directories are there. If not, try to create them.
-    folder_exists = create_folder_if_not_exists(OUTPUT_DIR)
+    folder_exists = create_folder_if_not_exists(conf)
     if not folder_exists:
-        raise Exception(f"No folder for output. Stopping")
+        raise Exception("No folder for output. Stopping")
 
     # Check for the folder to put Python PICKLE files
-    if PICKLE_DIR != "":
-        folder_exists = create_folder_if_not_exists(OUTPUT_DIR)
+    if conf.PICKLE_DIR != "":
+        folder_exists = create_folder_if_not_exists(conf)
         if not folder_exists:
-            raise Exception(f"No folder for pickle files. Stopping")
+            raise Exception("No folder for pickle files. Stopping")
 
     # Check if the MAP_FOLDER is there
-    if MAKE_MAP:
-        folder_exists = create_folder_if_not_exists(MAP_FOLDER)
+    if conf.MAKE_MAP:
+        folder_exists = create_folder_if_not_exists(conf)
         if not folder_exists:
-            raise Exception(f"No folder for the map files. Stopping")
+            raise Exception("No folder for the map files. Stopping")
 
     # Check that the CSV file is there
-    if not os.path.isfile(OUTLETS_CSV):
-        raise Exception(f"Could not your outlets file at: {OUTLETS_CSV}")
+    if not os.path.isfile(conf.OUTLETS_CSV):
+        raise Exception(f"Could not find your outlets file at: {conf.OUTLETS_CSV}")
 
     # Read the outlet points CSV file and put into a Pandas DataFrame
     # (I call the outlet points gages, because I usually in delineated watersheds at streamflow gages)
-    if VERBOSE: print(f"Reading your outlets data in: {OUTLETS_CSV}")
-    gages_df = pd.read_csv(OUTLETS_CSV, header=0, dtype={'id': 'str', 'lat': 'float', 'lng': 'float'})
+    if conf.VERBOSE: 
+        print(f"Reading your outlets data in: {conf.OUTLETS_CSV}")
+    gages_df = pd.read_csv(conf.OUTLETS_CSV, header=0, dtype={'id': 'str', 'lat': 'float', 'lng': 'float'})
 
     # Check that the CSV file includes at a minimum: id, lat, lng and that all values are appropriate
     validate(gages_df)
@@ -311,7 +315,7 @@ def delineate():
 
     # If we are doing detailed delineation with raster data, we'll keep track of the "snapped" pour point
     # pysheds will always move the point a little bit, so that it coincides with the gridded data.
-    if HIGH_RES:
+    if conf.HIGH_RES:
         gages_df['lat_snap'] = np.nan
         gages_df['lng_snap'] = np.nan
         gages_df['snap_dist'] = 0
@@ -324,10 +328,11 @@ def delineate():
     # No longer needed with GeoPandas v 0.14
     #gages_df.drop(['geometry'], axis=1, inplace=True)
 
-    if VERBOSE: print("Finding out which Level 2 megabasin(s) your points are in")
+    if conf.VERBOSE: 
+        print("Finding out which Level 2 megabasin(s) your points are in")
     # This file has the merged "megabasins_gdf" in it
-    merit_basins_shp = 'data/shp/basins_level2/merit_hydro_vect_level2.shp'
-    megabasins_gdf = gpd.read_file(merit_basins_shp)
+    #merit_basins_shp = 'data/shp/basins_level2/merit_hydro_vect_level2.shp'
+    megabasins_gdf = gpd.read_file(conf.MERIT_BASINS_SHP)
     # The CRS string in the shapefile is EPSG 4326 but does not match verbatim
     megabasins_gdf.to_crs(PROJ_WGS84, inplace=True)
     if not megabasins_gdf.loc[0].BASIN == 11:
@@ -335,7 +340,7 @@ def delineate():
 
     # Overlay the gage points on the Level 2 Basins polygons to find out which
     # PFAF_2 basin each point falls inside of, using a spatial join
-    if SEARCH_DIST == 0:
+    if conf.SEARCH_DIST == 0:
         gages_basins_join = gpd.sjoin(points_gdf, megabasins_gdf, how="left", predicate='intersects')
 
     else:
@@ -343,7 +348,7 @@ def delineate():
         # This line generates a warning about how its bad to use distances in unprojected geodata. OK
         with warnings.catch_warnings():
             warnings.simplefilter(action='ignore', category=UserWarning)
-            gages_basins_join = gpd.sjoin_nearest(points_gdf, megabasins_gdf, how='left', max_distance=SEARCH_DIST)
+            gages_basins_join = gpd.sjoin_nearest(points_gdf, megabasins_gdf, how='left', max_distance=conf.SEARCH_DIST)
 
     # Needed to set this option in order to avoid a warning message in Geopandas.
     # https://stackoverflow.com/questions/20625582/how-to-deal-with-settingwithcopywarning-in-pandas
@@ -357,7 +362,8 @@ def delineate():
     basins_df = gages_basins_join.groupby("BASIN").id.nunique()
     basins = basins_df.index.tolist()
 
-    if VERBOSE: print(f"Your watershed outlets are in {len(basins)} basin(s)")
+    if conf.VERBOSE: 
+        print(f"Your watershed outlets are in {len(basins)} basin(s)")
 
     # Find any outlet points that are not in any Level 2 basin, and add these to the fail list
     # Look for any rows that are in gages_df that are not in basins_df
@@ -382,32 +388,35 @@ def delineate():
         # Create a dataframe of the gages_basins_join in that basins
         gages_in_basin = gages_basins_join[gages_basins_join["BASIN"] == basin]
         num_gages_in_basin = len(gages_in_basin)
-        if VERBOSE: print("\nBeginning delineation for %s outlet point(s) in Level 2 Basin #%s." % (num_gages_in_basin, basin))
+        if conf.VERBOSE: 
+            print("\nBeginning delineation for %s outlet point(s) in Level 2 Basin #%s." % (num_gages_in_basin, basin))
 
-        if HIGH_RES:
-            catchments_gdf = load_gdf("catchments", basin, True)
+        if conf.HIGH_RES:
+            catchments_gdf = load_gdf(conf, "catchments", basin, True)
             catchments_lowres_gdf = None
         else:
-            catchments_gdf = load_gdf("catchments", basin, False)
+            catchments_gdf = load_gdf(conf, "catchments", basin, False)
 
         # The network data is in the RIVERS file rather than the CATCHMENTS file
         # (this is just how the MeritBASIS authors did it)
-        if VERBOSE: print('Reading data table for rivers in basin %s' % basin)
-        rivers_gdf = load_gdf("rivers", basin, True)
+        if conf.VERBOSE: 
+            print('Reading data table for rivers in basin %s' % basin)
+        rivers_gdf = load_gdf(conf, "rivers", basin, True)
 
         # Perform a Spatial join on gages (points) and unit catchments (polygons)
         # to find the corresponding unit catchment for each gage
         # Adds the fields COMID and unitarea
-        if VERBOSE: print(f"Performing spatial join on {num_gages_in_basin} outlet points in basin #{basin}")
+        if conf.VERBOSE: 
+            print(f"Performing spatial join on {num_gages_in_basin} outlet points in basin #{basin}")
         gages_in_basin.drop(['index_right'], axis=1, inplace=True)
-        validate_search_distance()
-        if SEARCH_DIST == 0:
+        validate_search_distance(conf=conf)
+        if conf.SEARCH_DIST == 0:
             gages_joined = gpd.sjoin(gages_in_basin, catchments_gdf, how="left", predicate="intersects")
         else:
             # This line generates a warning about how its bad to use distances in unprojected geodata. OK
             with warnings.catch_warnings():
                 warnings.simplefilter(action='ignore', category=UserWarning)
-                gages_joined = gpd.sjoin_nearest(gages_in_basin, catchments_gdf, max_distance=SEARCH_DIST)
+                gages_joined = gpd.sjoin_nearest(gages_in_basin, catchments_gdf, max_distance=conf.SEARCH_DIST)
 
         gages_joined.rename(columns={"index_right": "COMID"}, inplace=True)
 
@@ -424,10 +433,11 @@ def delineate():
         # Iterate over the gages and assemble the watershed
         for i in range(0, num_gages_in_basin):
             gages_counter += 1
-            if VERBOSE: print(f"\n* Delineating watershed {gages_counter} of {n_gages}, with outlet id = {wid}")
+            if conf.VERBOSE: 
+                print(f"\n* Delineating watershed {gages_counter} of {n_gages}, with outlet id = {wid}")
 
             # Reset the local boolean flag for high-res mode. If the watershed is too big, script will switch to low.
-            bool_high_res = HIGH_RES
+            bool_high_res = conf.HIGH_RES
 
             # Let wid be the watershed ID. Get the lat, lng coords of the gage.
             wid = gages_joined['id'].iloc[i]
@@ -444,18 +454,18 @@ def delineate():
             # the script will check whether the upstream area of the unit catchment is a good match.
             # If the areas do not match well, look around the neighborhood for another unit catchment
             # whose area is a closer match to what we think it is.
-            if bAreas and MATCH_AREAS:
+            if bAreas and conf.MATCH_AREAS:
                 area_reported = gages_df.loc[wid].area_reported
                 PD_area = abs((area_reported - up_area) / area_reported)
-                if PD_area > AREA_MATCHING_THRESHOLD:
-                    if VERBOSE:
+                if PD_area > conf.AREA_MATCHING_THRESHOLD:
+                    if conf.VERBOSE:
                         print("Outlet point is in a unit catchment whose area is not a close match.")
                         print("Searching neighborhood for a river reach with a more closely matching upstream area")
                     candidate_comid, up_area = find_close_catchment()
                     if candidate_comid is None:
                         failed[wid] = "Could not find a nearby river reach whose upstream area is " \
                                       "within {}% of reported area of {:,.0f} km²" \
-                            .format(AREA_MATCHING_THRESHOLD * 100, area_reported)
+                            .format(conf.AREA_MATCHING_THRESHOLD * 100, area_reported)
                         continue
                     else:
                         terminal_comid = candidate_comid
@@ -465,16 +475,18 @@ def delineate():
 
             # Add the first node, and the rest will be added recursively
             addnode(B, terminal_comid)
-            if VERBOSE: print(f"  found {len(B)} unit catchments in the watershed")
+            if conf.VERBOSE: 
+                print(f"  found {len(B)} unit catchments in the watershed")
 
             # If the watershed is too big, revert to low-precision mode.
-            if HIGH_RES and up_area > LOW_RES_THRESHOLD:
-                if VERBOSE: print(f"Watershed for id = {wid} is larger than LOW_RES_THRESHOLD = {LOW_RES_THRESHOLD}. "
-                                  "SWITCHING TO LOW-RESOLUTION MODE.")
+            if conf.HIGH_RES and up_area > conf.LOW_RES_THRESHOLD:
+                if conf.VERBOSE: 
+                    print(f"Watershed for id = {wid} is larger than LOW_RES_THRESHOLD = {conf.LOW_RES_THRESHOLD}. "
+                        "SWITCHING TO LOW-RESOLUTION MODE.")
                 bool_high_res = False
                 # If we just flipped to low-res mode, check if the low-res unit catchment polygons are loaded.
                 if catchments_lowres_gdf is None:
-                    catchments_lowres_gdf = load_gdf("catchments", basin, False)
+                    catchments_lowres_gdf = load_gdf(conf, "catchments", basin, False)
 
                 subbasins_gdf = catchments_lowres_gdf.loc[B]
             else:
@@ -483,20 +495,19 @@ def delineate():
                 subbasins_gdf = catchments_gdf.loc[B]
 
             # Make a plot of the selected unit catchments
-            if PLOTS:
+            if conf.PLOTS:
                 plot_basins("pre")
 
             # In detailed mode,
             if bool_high_res:
-                if VERBOSE: print("Performing detailed raster-based delineation for "
-                                  "the downstream portion of the watershed")
+                if conf.VERBOSE: 
+                    print("Performing detailed raster-based delineation for the downstream portion of the watershed")
+                
                 # Let split_catchment_poly be the polygon of the terminal unit catchment
                 assert terminal_comid == B[0]
                 catchment_poly = subbasins_gdf.loc[terminal_comid].geometry
                 bSingleCatchment = len(B) == 1
-                split_catchment_poly, lat_snap, lng_snap = py.merit_detailed.split_catchment(wid, basin, lat, lng,
-                                                                                             catchment_poly,
-                                                                                             bSingleCatchment)
+                split_catchment_poly, lat_snap, lng_snap = py.merit_detailed.split_catchment(conf, wid, basin, lat, lng, catchment_poly, bSingleCatchment)
                 if split_catchment_poly is None:
                     failed[wid] = "An error occured in pysheds detailed delineation."
                     continue
@@ -507,23 +518,24 @@ def delineate():
                     split_geom = split_gdf.loc[0, 'geometry']
                     subbasins_gdf.loc[terminal_comid, 'geometry'] = split_geom
 
-            if PLOTS:
+            if conf.PLOTS:
                 plot_basins("post")
 
-            if VERBOSE: print("Dissolving...")
+            if conf.VERBOSE: 
+                print("Dissolving...")
             # mybasin_gs is a GeoPandas GeoSeries
             mybasin_gs = dissolve_geopandas(subbasins_gdf)
 
-            if FILL:
+            if conf.FILL:
                 # Fill donut holes in the watershed polygon
                 # Recall we asked the user for the fill threshold in terms of number of pixels
                 PIXEL_AREA = 0.000000695  # Constant for the area of a single pixel in MERIT-Hydro, in decimal degrees
-                area_max = FILL_THRESHOLD * PIXEL_AREA
+                area_max = conf.FILL_THRESHOLD * PIXEL_AREA
                 mybasin_gs = fill_geopandas(mybasin_gs, area_max=area_max)
 
-            if SIMPLIFY:
+            if conf.SIMPLIFY:
                 # Simplify the geometry. GeoPandas uses the simple Douglas-Peuker algorithm
-                mybasin_gs = mybasin_gs.simplify(tolerance=SIMPLIFY_TOLERANCE)
+                mybasin_gs = mybasin_gs.simplify(tolerance=conf.SIMPLIFY_TOLERANCE)
 
             # Let mybasin_gdf be a GeoPandas DataFrame with the geometry, and the id and area of our watershed
             mybasin_gdf = gpd.GeoDataFrame(geometry=mybasin_gs)
@@ -564,15 +576,16 @@ def delineate():
                 gages_df.at[wid, 'perc_diff'] = perc_diff
 
             # SAVE the Watershed to disk as a GeoJSON file or a shapefile
-            if VERBOSE: print(f' Writing output for watershed {wid}')
-            outfile = f"{OUTPUT_DIR}/{wid}.{OUTPUT_EXT}"
+            if conf.VERBOSE: 
+                print(f' Writing output for watershed {wid}')
+            outfile = f"{conf.OUTPUT_DIR}/{wid}.{conf.OUTPUT_EXT}"
 
             # This line rounds all the vertices to fewer digits. For text-like formats GeoJSON or KML, makes smaller
             # files with minimal loss of precision. For other formats (shp, gpkg), doesn't make a difference in file size
-            if OUTPUT_EXT.lower() in ['geojson', 'kml']:
+            if conf.OUTPUT_EXT.lower() in ['geojson', 'kml']:
                 mybasin_gdf.geometry = mybasin_gdf.geometry.apply(lambda x: loads(re.sub(simpledec, mround, x.wkt)))
 
-            if OUTPUT_EXT != "":
+            if conf.OUTPUT_EXT != "":
                 with warnings.catch_warnings():
                     warnings.simplefilter(action='ignore', category=UserWarning)
                     mybasin_gdf.to_file(outfile)
@@ -581,8 +594,8 @@ def delineate():
             # We have to write a second, slightly different version of the GeoJSON files,
             # because we need it in a .js file assigned to a variable, to avoid cross-origin restrictions
             # of modern web browsers.
-            if MAKE_MAP:
-                watershed_js = f"{MAP_FOLDER}/{wid}.js"
+            if conf.MAKE_MAP:
+                watershed_js = f"{conf.MAP_FOLDER}/{wid}.js"
                 with open(watershed_js, 'w') as f:
                     s = f"gage_coords = [{lat}, {lng}];\n"
                     f.write(s)
@@ -592,7 +605,7 @@ def delineate():
                     f.write("basin = ")
                     f.write(mybasin_gdf.to_json())
 
-                if MAP_RIVERS:
+                if conf.MAP_RIVERS:
                     myrivers_gdf = rivers_gdf.loc[B]
 
                     # Keep only the fields lengthkm and order
@@ -600,42 +613,44 @@ def delineate():
 
                     # Filter out the little headwater streams in large watersheds.
                     max_order = myrivers_gdf.order.max()
-                    min_order = max_order - NUM_STREAM_ORDERS
+                    min_order = max_order - conf.NUM_STREAM_ORDERS
                     # Drop rows where order < min_order
                     myrivers_gdf = myrivers_gdf[myrivers_gdf.order >= min_order]
                     myrivers_gdf = myrivers_gdf.round(1)
                     myrivers_gdf.geometry = myrivers_gdf.geometry.apply(lambda x: loads(re.sub(simpledec, mround, x.wkt)))
-                    rivers_js = f"{MAP_FOLDER}/{wid}_rivers.js"
+                    rivers_js = f"{conf.MAP_FOLDER}/{wid}_rivers.js"
                     with open(rivers_js, 'w') as f:
                         f.write("rivers = ")
                         f.write(myrivers_gdf.to_json())
 
     # CREATE OUTPUT.CSV, a data table of the outputs
     # id, status (hi, low, failed), name, area_reported, area_calculated
-    if OUTPUT_CSV:
-        output_csv_filename = f"{OUTPUT_DIR}/OUTPUT.csv"
+    if conf.OUTPUT_CSV:
+        output_csv_filename = f"{conf.OUTPUT_DIR}/OUTPUT.csv"
         gages_df.to_csv(output_csv_filename)
 
     # FAILED.csv: If there were any failures, write this to a separate CSV file
     if len(failed) > 0:
         print(f"### FAILED to find watersheds for {len(failed)} locations. Check FAILED.csv for info.")
 
-        failfile = f"{OUTPUT_DIR}/FAILED.csv"
+        failfile = f"{conf.OUTPUT_DIR}/FAILED.csv"
         with open(failfile, 'w') as f:
             f.write("ID, EXPLANATION\n")
             for k, v in failed.items():
                 f.write(f'{k},"{v}"\n')
 
     # If the user wants the browser map, make it
-    if MAKE_MAP:
-        if VERBOSE: print("* Creating viewer.html *")
-        make_map(gages_df)
+    if conf.MAKE_MAP:
+        if conf.VERBOSE: 
+            print("* Creating viewer.html *")
+        make_map(config=conf, df=gages_df)
 
     # Finished, print a little status message
-    if VERBOSE: print(f"It's over! See results in {output_csv_filename}")
+    if conf.VERBOSE: 
+        print(f"It's over! See results in {output_csv_filename}")
 
 
-def get_pickle_filename(geotype: str, basin: int, high_resolution: bool) -> str:
+def get_pickle_filename(conf: Config,geotype: str, basin: int, high_resolution: bool) -> str:
     """Simple function to get the standard filename for the pickle files used by this project.
     The filenames look like this:
        PICKLE_DIR/catchments_##_hires.pkl
@@ -652,11 +667,11 @@ def get_pickle_filename(geotype: str, basin: int, high_resolution: bool) -> str:
         resolution_str = 'hires'
     else:
         resolution_str = 'lores'
-    fname = f'{PICKLE_DIR}/{geotype}_{basin}_{resolution_str}.pkl'
+    fname = f'{conf.PICKLE_DIR}/{geotype}_{basin}_{resolution_str}.pkl'
     return fname
 
 
-def load_gdf(geotype: str, basin: int, high_resolution: bool) -> gpd.GeoDataFrame:
+def load_gdf(conf: Config, geotype: str, basin: int, high_resolution: bool) -> gpd.GeoDataFrame:
     """
     Returns the unit catchments vector polygon dataset as a GeoDataFrame
     Gets the data from the MERIT-Basins shapefile the first time,
@@ -673,27 +688,29 @@ def load_gdf(geotype: str, basin: int, high_resolution: bool) -> gpd.GeoDataFram
     """
 
     # First, check for the presence of a pickle file
-    if PICKLE_DIR != '':
-        pickle_fname = get_pickle_filename(geotype, basin, high_resolution)
+    if conf.PICKLE_DIR != '':
+        pickle_fname = get_pickle_filename(conf, geotype, basin, high_resolution)
         if os.path.isfile(pickle_fname):
-            if VERBOSE: print(f"Fetching BASIN # {basin} catchment data from pickle file.")
+            if conf.VERBOSE: 
+                print(f"Fetching BASIN # {basin} catchment data from pickle file.")
             gdf = pickle.load(open(pickle_fname, "rb"))
             return gdf
 
     # Open the shapefile for the basin
     if geotype == "catchments":
         if high_resolution:
-            directory = HIGHRES_CATCHMENTS_DIR
+            directory = conf.HIGHRES_CATCHMENTS_DIR
         else:
-            directory = LOWRES_CATCHMENTS_DIR
+            directory = conf.LOWRES_CATCHMENTS_DIR
         shapefile = f"{directory}/cat_pfaf_{basin}_MERIT_Hydro_v07_Basins_v01.shp"
     elif geotype == "rivers":
-        shapefile = f"{RIVERS_DIR}/riv_pfaf_{basin}_MERIT_Hydro_v07_Basins_v01.shp"
+        shapefile = f"{conf.RIVERS_DIR}/riv_pfaf_{basin}_MERIT_Hydro_v07_Basins_v01.shp"
 
     if not os.path.isfile(shapefile):
         raise Exception(f"Could not find the file: {shapefile}")
 
-    if VERBOSE: print(f"Reading geodata in {shapefile}")
+    if conf.VERBOSE: 
+        print(f"Reading geodata in {shapefile}")
     gdf = gpd.read_file(shapefile)
     gdf.set_index('COMID', inplace=True)
 
@@ -701,13 +718,13 @@ def load_gdf(geotype: str, basin: int, high_resolution: bool) -> gpd.GeoDataFram
     gdf.set_crs(PROJ_WGS84, inplace=True, allow_override=True)
 
     # Before we exit, save the GeoDataFrame as a pickle file, for future speedups!
-    save_pickle(geotype, gdf, basin, high_resolution)
+    save_pickle(conf, geotype, gdf, basin, high_resolution)
     return gdf
 
 
-def save_pickle(geotype: str, gdf: gpd.GeoDataFrame, basin: int, high_resolution: bool):
+def save_pickle(conf: Config,geotype: str, gdf: gpd.GeoDataFrame, basin: int, high_resolution: bool):
     # If we loaded the catchments from a shapefile, save the gdf to a pickle file for future speedup
-    if PICKLE_DIR != '':
+    if conf.PICKLE_DIR != '':
 
         # Check whether the GDF has a spatial index.
         # Note: I don't think this is ever necessary. Since version 0.7.0 (March 2020), GeoPandas
@@ -717,14 +734,15 @@ def save_pickle(geotype: str, gdf: gpd.GeoDataFrame, basin: int, high_resolution
             gdf.sindex.create_index()
 
         # Get the standard project filename for the pickle files.
-        pickle_fname = get_pickle_filename(geotype, basin, high_resolution)
+        pickle_fname = get_pickle_filename(conf, geotype, basin, high_resolution)
         if not os.path.isfile(pickle_fname):
-            if VERBOSE: print(f"Saving GeoDataFrame to pickle file: {pickle_fname}")
+            if conf.VERBOSE: 
+                print(f"Saving GeoDataFrame to pickle file: {pickle_fname}")
             try:
                 pickle.dump(gdf, open(pickle_fname, "wb"))
-            except:
-                raise Warning("Could not save pickle file to: {pickle_fname}")
+            except Exception as e:
+                raise Warning(f"Could not save pickle file to: {pickle_fname}. Message: {str(e)}")
 
 
 if __name__ == "__main__":
-    delineate()
+    delineate(conf=conf)
