@@ -5,3 +5,5 @@ py/__pycache__/
 map/*
 output/*
 plots/*
+data/*
+.DS_Store
