@@ -1,0 +1,10 @@
+{
+    "delineate": {
+        "parameters": {
+            "lowres_threshold": 50000
+        },
+        "data": {
+            "outlets": "/in/outlets.geojson"
+        }
+    }
+}

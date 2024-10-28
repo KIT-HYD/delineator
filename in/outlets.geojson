@@ -1,0 +1,30 @@
+{
+"type": "FeatureCollection",
+"name": "outlets",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "id": 6401070, "lat": 64.71072, "lng": -21.60337, "name": "Nordhura River at Stekkur", "area": 507 }, "geometry": { "type": "Point", "coordinates": [ -21.60337, 64.71072 ] } },
+{ "type": "Feature", "properties": { "id": 6401080, "lat": 64.69229, "lng": -21.41046, "name": "Hvita River at Kljafoss", "area": 1574 }, "geometry": { "type": "Point", "coordinates": [ -21.41046, 64.69229 ] } },
+{ "type": "Feature", "properties": { "id": 6401090, "lat": 63.93796, "lng": -21.00666, "name": "Olfusa River at Selfoss", "area": 5662 }, "geometry": { "type": "Point", "coordinates": [ -21.00666, 63.93796 ] } },
+{ "type": "Feature", "properties": { "id": 6401111, "lat": 64.1601, "lng": -20.55913, "name": "Bruara River at Dynjandi", "area": 640 }, "geometry": { "type": "Point", "coordinates": [ -20.55913, 64.1601 ] } },
+{ "type": "Feature", "properties": { "id": 6401120, "lat": 63.93362, "lng": -20.63135, "name": "Thjorsa River at Krokur", "area": 7314 }, "geometry": { "type": "Point", "coordinates": [ -20.63135, 63.93362 ] } },
+{ "type": "Feature", "properties": { "id": 6401130, "lat": 64.9839, "lng": -15.0883, "name": "Jokulsa I River at Fljotsdal Holl", "area": 558 }, "geometry": { "type": "Point", "coordinates": [ -15.0883, 64.9839 ] } },
+{ "type": "Feature", "properties": { "id": 6401140, "lat": 63.79723, "lng": -20.11284, "name": "Eystri-Ranga River at Tungufoss", "area": 419 }, "geometry": { "type": "Point", "coordinates": [ -20.11284, 63.79723 ] } },
+{ "type": "Feature", "properties": { "id": 6401150, "lat": 63.86324, "lng": -20.34065, "name": "Ytri-Ranga River at Arbaejarfoss", "area": 621 }, "geometry": { "type": "Point", "coordinates": [ -20.34065, 63.86324 ] } },
+{ "type": "Feature", "properties": { "id": 6401160, "lat": 64.75281, "lng": -14.48605, "name": "Fossa River at Eyjolfsstadir", "area": 115 }, "geometry": { "type": "Point", "coordinates": [ -14.48605, 64.75281 ] } },
+{ "type": "Feature", "properties": { "id": 6401200, "lat": 65.3297, "lng": -19.08525, "name": "Vestri-Jokulsa River at Godhdala Bru", "area": 844 }, "geometry": { "type": "Point", "coordinates": [ -19.08525, 65.3297 ] } },
+{ "type": "Feature", "properties": { "id": 6401240, "lat": 65.49006, "lng": -20.11284, "name": "Blanda River at Langamyri", "area": 1699 }, "geometry": { "type": "Point", "coordinates": [ -20.11284, 65.49006 ] } },
+{ "type": "Feature", "properties": { "id": 6401250, "lat": 65.30184, "lng": -20.10668, "name": "Vatnsdalsa River at Forsaeludalur", "area": 458 }, "geometry": { "type": "Point", "coordinates": [ -20.10668, 65.30184 ] } },
+{ "type": "Feature", "properties": { "id": 6401300, "lat": 66.06976, "lng": -21.75298, "name": "Hvala River at Op", "area": 193 }, "geometry": { "type": "Point", "coordinates": [ -21.75298, 66.06976 ] } },
+{ "type": "Feature", "properties": { "id": 6401310, "lat": 65.58876, "lng": -23.12719, "name": "Vatnsdalsa River at Eidhi", "area": 102 }, "geometry": { "type": "Point", "coordinates": [ -23.12719, 65.58876 ] } },
+{ "type": "Feature", "properties": { "id": 6401400, "lat": 65.8507, "lng": -17.89667, "name": "Fnjoska River at Arbugsa", "area": 1102 }, "geometry": { "type": "Point", "coordinates": [ -17.89667, 65.8507 ] } },
+{ "type": "Feature", "properties": { "id": 6401440, "lat": 63.78048, "lng": -19.4171, "name": "Markarfljot River at Emstrur", "area": 517 }, "geometry": { "type": "Point", "coordinates": [ -19.4171, 63.78048 ] } },
+{ "type": "Feature", "properties": { "id": 6401460, "lat": 66.19809, "lng": -15.59652, "name": "Sanda River at Flogubru I", "area": 266 }, "geometry": { "type": "Point", "coordinates": [ -15.59652, 66.19809 ] } },
+{ "type": "Feature", "properties": { "id": 6401500, "lat": 63.9509, "lng": -17.63609, "name": "Djupa River at Djupa Bru", "area": 226 }, "geometry": { "type": "Point", "coordinates": [ -17.63609, 63.9509 ] } },
+{ "type": "Feature", "properties": { "id": 6401601, "lat": 65.49459, "lng": -19.384, "name": "Svarta River at Reykjafoss", "area": 396 }, "geometry": { "type": "Point", "coordinates": [ -19.384, 65.49459 ] } },
+{ "type": "Feature", "properties": { "id": 6401610, "lat": 65.37076, "lng": -17.34691, "name": "Skjalfandafljot River at Aldeyjarfoss", "area": 2163 }, "geometry": { "type": "Point", "coordinates": [ -17.34691, 65.37076 ] } },
+{ "type": "Feature", "properties": { "id": 6401702, "lat": 65.6233, "lng": -16.18933, "name": "Jokulsa River at Grimsstadir", "area": 5097 }, "geometry": { "type": "Point", "coordinates": [ -16.18933, 65.6233 ] } },
+{ "type": "Feature", "properties": { "id": 6401703, "lat": 65.06074, "lng": -16.21187, "name": "Jokulsa River at  Upptyppingar", "area": 2023 }, "geometry": { "type": "Point", "coordinates": [ -16.21187, 65.06074 ] } },
+{ "type": "Feature", "properties": { "id": 6401800, "lat": 65.50253, "lng": -14.36201, "name": "Lagarfljot River at Lagarfoss", "area": 2819 }, "geometry": { "type": "Point", "coordinates": [ -14.36201, 65.50253 ] } }
+]
+}

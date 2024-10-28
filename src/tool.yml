@@ -1,0 +1,24 @@
+tools:
+  delineate:
+    title: delineate.py
+    description: |
+      Fast, accurate watershed delineation using hybrid vector- and raster-based methods and data from MERIT-Hydro.
+      This is the tool-spec version of delineate.py. It runs as a docker container with data for Western Europe
+      already included. You can also use the tool to download more MERIT-Hydro data and reuse the downloaded data
+      for the next runs of the tool.
+    parameters:
+      lowres_threshold:
+        description: Threshold for watershed size in km² above which the script will revert to low-resolution mode.
+        type: integer
+        default: 50000
+    data:
+      outlets:
+        description: | 
+          A CSV or GeoJSON file of the watershed outlets. 
+          The GeoJSON is the preferred format. Has to be a FeatureCollection of Point geometries.
+          CSV needs at least a lon and a lat column, but accepts also an id, name and area column. 
+          If area is provided, it can be used to calcualte the error of the delineation.
+        extension: 
+          - csv
+          - geojson
+        example: /in/outlets.geojson    
