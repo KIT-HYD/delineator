@@ -7,3 +7,4 @@ output/*
 plots/*
 data/*
 .DS_Store
+out/*
