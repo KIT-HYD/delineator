@@ -4,6 +4,8 @@ from pathlib import Path
 import subprocess
 import shutil
 
+from json2args.logger import logger
+
 RASTER_URL = 'https://mghydro.com/watersheds/rasters'
 SHAPE_URL = 'https://merit.mmaelicke.de'
 LOWRES_URL = 'https://mghydro.com/watersheds/share/catchments_simplified.zip'
@@ -66,6 +68,7 @@ def download_merit_catchments(region_code: int, path: str = '/data'):
 
     # check if both are aready there
     if cat_file.exists() and riv_file.exists():
+        logger.info(f"Merit-Hydro catchment and river shapefiles already downloaded for region {region_code}.")
         return
 
     # download the zip file of the catchment and river shapefiles
