@@ -42,17 +42,32 @@ def download_merit_basins(region_code: int, path: str = '/data'):
 
     # get the file
     accu_target = PATH / 'accum_basins' / f'accum{region_code}.tif'
-    subprocess.run(['wget', '--no-clobber', accu_url, '-O', accu_target])
+    if not accu_target.exists():
+        subprocess.run(['wget', '--no-clobber', accu_url, '-O', accu_target])
 
     # download the flow direction raster
     flow_dir_url = f"{RASTER_URL}/flow_dir_basins/flowdir{region_code}.tif"
     
     # get the file
     flow_dir_target = PATH / 'flowdir_basins' / f'flowdir{region_code}.tif'
-    subprocess.run(['wget', '--no-clobber', flow_dir_url, '-O', flow_dir_target])
+    if not flow_dir_target.exists():
+        subprocess.run(['wget', '--no-clobber', flow_dir_url, '-O', flow_dir_target])
 
 
 def download_merit_catchments(region_code: int, path: str = '/data'):
+    # create the target directory if not exists
+    PATH = Path(path) / 'shp'
+    cat_file = PATH / 'merit_catchments' / f'pfaf_{region_code}_MERIT_Hydro_v07_Basins_v01.shp'
+    riv_file = PATH / 'merit_rivers' / f'pfaf_{region_code}_MERIT_Hydro_v07_Rivers_v01.shp'
+
+    # create the folders if not exists
+    cat_file.parent.mkdir(parents=True, exist_ok=True)
+    riv_file.parent.mkdir(parents=True, exist_ok=True)
+
+    # check if both are aready there
+    if cat_file.exists() and riv_file.exists():
+        return
+
     # download the zip file of the catchment and river shapefiles
     file_name = f"pfaf_{region_code}_MERIT_Hydro_v07_Basins_v01.zip"
     catch_url = f"{SHAPE_URL}/{file_name}"
@@ -60,11 +75,6 @@ def download_merit_catchments(region_code: int, path: str = '/data'):
 
     # unzip the file into a temporary folder and copy to the right place
     subprocess.run(['unzip', '-d', 'tmp', '-o', file_name])
-    
-    # create the target directory if not exists
-    PATH = Path(path) / 'shp'
-    (PATH / 'merit_catchments').mkdir(parents=True, exist_ok=True)
-    (PATH / 'merit_rivers').mkdir(parents=True, exist_ok=True)
 
     # move the files to the right place
     subprocess.run(f"mv tmp/cat_* {PATH / 'merit_catchments'}", shell=True)
