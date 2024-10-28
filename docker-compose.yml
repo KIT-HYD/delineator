@@ -1,0 +1,8 @@
+services:
+  delineator:
+    build: .
+    volumes:
+      - ./in:/in
+      - ./data:/data
+      - ./out:/out
+#      - ./src:/src
