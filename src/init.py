@@ -59,8 +59,8 @@ def download_merit_basins(region_code: int, path: str = '/data'):
 def download_merit_catchments(region_code: int, path: str = '/data'):
     # create the target directory if not exists
     PATH = Path(path) / 'shp'
-    cat_file = PATH / 'merit_catchments' / f'pfaf_{region_code}_MERIT_Hydro_v07_Basins_v01.shp'
-    riv_file = PATH / 'merit_rivers' / f'pfaf_{region_code}_MERIT_Hydro_v07_Rivers_v01.shp'
+    cat_file = PATH / 'merit_catchments' / f'cat_pfaf_{region_code}_MERIT_Hydro_v07_Basins_v01.shp'
+    riv_file = PATH / 'merit_rivers' / f'riv_pfaf_{region_code}_MERIT_Hydro_v07_Rivers_v01.shp'
 
     # create the folders if not exists
     cat_file.parent.mkdir(parents=True, exist_ok=True)
