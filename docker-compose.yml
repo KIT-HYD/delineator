@@ -11,7 +11,7 @@ services:
   nitrate:
     build: .
     volumes:
-      - .example/nitrate/in:/in
+      - ./example/nitrate/in:/in
       - ./data:/data
-      - .example/nitrate/out:/out
+      - ./example/nitrate/out:/out
     command: echo "run as docker compose run --rm nitrate python run.py"
