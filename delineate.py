@@ -385,6 +385,10 @@ def delineate(conf: Config):
     # Iterate over the basins so that we only have
     # to open up each Level 2 Basin shapefile once, and handle all of the gages in it
     for basin in basins:
+        # mmaelicke: I am not why this happens or where this comes from, but for some 
+        # of my inputs ie. on megabasin 11 or 12, basin in a float. Then, load_gdf does not work.
+        basin = int(basin)
+        
         # Create a dataframe of the gages_basins_join in that basins
         gages_in_basin = gages_basins_join[gages_basins_join["BASIN"] == basin]
         num_gages_in_basin = len(gages_in_basin)
